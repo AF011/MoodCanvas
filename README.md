@@ -6,6 +6,10 @@ MoodCanvas is a personalized personality development application that creates a 
 
 ![MoodCanvas Poster](Images/Team%20Beacons/Mood%20Canvas%20Poster.png)
 
+## 📹 Live Demo
+
+Watch our MoodCanvas demonstration: [YouTube Demo](https://youtu.be/ZzH9x7nGJuw)
+
 ## 🌟 Core Vision
 
 MoodCanvas transforms the way we approach personal development by creating an AI-powered alter ego that truly understands you. Through initial conversations, mood tracking, and daily journaling, your alter ego evolves alongside you, providing personalized guidance, motivation, and a supportive presence accessible both through the app and WhatsApp.
@@ -142,3 +146,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Groq for LLM API access
 - MongoDB for document storage
 - Flask community for the web framework
+
+---
+
+***An AF's Endeavor Developed with 🥤 and 💡***
