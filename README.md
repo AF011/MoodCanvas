@@ -4,9 +4,15 @@
 
 MoodCanvas is a personalized personality development application that creates a unique "alter ego" companion to guide you on your journey of self-improvement and emotional growth.
 
+![MoodCanvas Poster](Images/Team%20Beacons/Mood%20Canvas%20Poster.png)
+
 ## 🌟 Core Vision
 
 MoodCanvas transforms the way we approach personal development by creating an AI-powered alter ego that truly understands you. Through initial conversations, mood tracking, and daily journaling, your alter ego evolves alongside you, providing personalized guidance, motivation, and a supportive presence accessible both through the app and WhatsApp.
+
+## 🎯 UN Sustainable Development Goal
+
+MoodCanvas directly supports **UN Sustainable Development Goal 3: Good Health and Well-being**. Our application contributes to mental health and emotional well-being by providing personalized support, helping users process their emotions, and encouraging positive personal development. In a world where mental health challenges continue to rise, MoodCanvas offers an accessible means of ongoing emotional support and self-improvement.
 
 ## ✨ Key Features
 
@@ -44,19 +50,19 @@ MoodCanvas transforms the way we approach personal development by creating an AI
 ```
 MoodCanvas/
 ├── app/
-│   ├── __init__.py             # App initialization
-│   ├── routes/
-│   │   ├── __init__.py         # Route definitions
-│   │   └── reminder_routes.py  # Reminder API endpoints
+│   ├── __init__.py                  # App initialization
+│   ├── routes.py
+│   ├── llm/
+│   │   └── alter_ego_processor.py   # AlterEgo Processor
 │   ├── utils/
-│   │   ├── db_utils.py         # Database utility functions
-│   │   ├── vector_utils.py     # Vector embedding utilities
-│   │   ├── whatsapp_utils.py   # WhatsApp integration tools
-│   │   └── reminder_utils.py   # Reminder system functions
-│   ├── whatsapp_integration.py # WhatsApp webhook handler
-│   └── templates/              # HTML templates
-├── run.py                      # Application entry point
-└── requirements.txt            # Project dependencies
+│   │   ├── db_utils.py              # Database utility functions
+│   │   ├── vector_utils.py          # Vector embedding utilities
+│   │   └── whatsapp_utils.py        # WhatsApp integration tools
+│   ├── whatsapp_integration.py      # WhatsApp webhook handler
+│   ├── templates/                   # HTML templates
+│   └── static/                      # Style Sheets
+├── run.py                           # Application entry point
+└── requirements.txt                 # Project dependencies
 ```
 
 ## 🛠️ Installation and Setup
@@ -83,12 +89,7 @@ MoodCanvas/
    TWILIO_WHATSAPP_NUMBER=your_twilio_whatsapp_number
    ```
 
-4. Start MongoDB:
-   ```
-   mongod
-   ```
-
-5. Run the application:
+4. Run the application:
    ```
    python run.py
    ```
@@ -118,12 +119,18 @@ MoodCanvas/
 - **Expanded Reminder System**: More sophisticated scheduling and personalized check-ins
 - **Wearable Integration**: Passive mood tracking through connected devices
 
-## 👥 Team
+## 👥 Team Beacons
 
-- Abdul Faheem (Leo Programmer - AF011)
-- B. Kumara Kousik
-- R. Shrinvass
-- G. Kalyan Sagar
+> **Bright Minds, Bold Visions**
+
+Team "Beacons" (VIP-Boys):
+
+* Abdul Faheem (Leo Programmer - AF011)
+* B. Kumara Kousik
+* R. Shrinvass
+* G. Kalyan Sagar
+
+![Beacons Poster](Images/Team%20Beacons/Beacons%20Poster.png)
 
 ## 📜 License
 
