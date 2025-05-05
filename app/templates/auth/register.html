@@ -1,0 +1,82 @@
+<!-- app/templates/register.html -->
+{% extends "base.html" %}
+
+{% block title %}Create Account | Mood Canvas{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="left-side">
+        <div class="logo">✨</div>
+        <h2 class="form-title">Create Account</h2>
+        <p class="sub-text create-subtext">Let's create an account to dive into your stellar world</p>
+
+        <div class="social-login-buttons">
+            <button class="social-btn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M21.8055 10.0415H12V14.0415H17.6515C17.2555 15.595 16.337 16.8293 15.0515 17.5885L18.5255 20.252C20.6215 18.2525 21.8055 15.0015 21.8055 10.0415Z" fill="#4285F4"/>
+                    <path d="M12 21.9555C14.43 21.9555 16.4675 21.135 18.0045 19.681L14.856 17.1895C13.959 17.811 12.6345 18.171 12 18.171C9.653 18.171 7.676 16.5915 6.964 14.4165L3.957 16.6525C5.497 19.778 8.767 21.9555 12 21.9555Z" fill="#34A853"/>
+                    <path d="M6.964 14.4165C6.784 13.744 6.691 13.0275 6.691 12.2915C6.691 11.556 6.784 10.839 6.964 10.1665L3.957 7.93C3.349 9.2705 3 10.744 3 12.2915C3 13.839 3.349 15.312 3.957 16.6525L6.964 14.4165Z" fill="#FBBC05"/>
+                    <path d="M12 6.412C13.535 6.412 14.918 6.9665 16.0045 8.0045L18.8045 5.2045C16.8635 3.3365 14.481 2 12 2C8.767 2 5.497 4.1775 3.957 7.9295L6.964 10.1665C7.676 7.9915 9.653 6.412 12 6.412Z" fill="#EA4335"/>
+                </svg>
+                Continue with Google
+            </button>
+        </div>
+
+        <div class="separator">OR</div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for message in messages %}
+                        <div class="flash-message">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <form id="authForm" action="{{ url_for('auth.register') }}" method="POST">
+            <div class="form-group" id="firstNameGroup">
+                <label for="firstName">First Name</label>
+                <input type="text" id="firstName" name="name" placeholder="Ex: Elita Maguire" required>
+            </div>
+            <div class="form-group" id="emailGroup">
+                <label for="email">Your Email</label>
+                <input type="email" id="email" name="email" placeholder="Ex: Maguire@field.com" required>
+            </div>
+            <div class="form-group" id="passwordGroup">
+                <label for="password">Password</label>
+                <div class="password-input-wrapper">
+                    <input type="password" id="password" name="password" placeholder="Create a password" required>
+                    <span class="toggle-password icon-eye"><i class="fas fa-eye"></i></span>
+                </div>
+            </div>
+            <button type="submit" class="form-button" id="submitButton">
+                Create account <i class="fas fa-arrow-right"></i>
+            </button>
+        </form>
+
+        <div class="toggle-link" id="toggleAuth">
+            Have an account? <a href="{{ url_for('auth.login') }}">Login</a>
+        </div>
+    </div>
+    <div class="right-side">
+        <div class="accent-star">*</div>
+        <p class="quote">The only war is to defeat our yesterdays self</p>
+        <div class="accent-star" style="opacity: 0.3;">*</div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const passwordInput = document.getElementById('password');
+    const togglePassword = document.querySelector('.toggle-password');
+
+    togglePassword.addEventListener('click', function() {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        this.querySelector('i').classList.toggle('fa-eye');
+        this.querySelector('i').classList.toggle('fa-eye-slash');
+    });
+</script>
+{% endblock %}

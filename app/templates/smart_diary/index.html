@@ -1,0 +1,1435 @@
+<!-- templates/smart_diary/index.html -->
+{% extends "base.html" %}
+
+{% block title %}Personal Diary | Mood Canvas{% endblock %}
+
+{% block body_class %}mood-canvas-page{% endblock %}
+
+{% block extra_css %}
+<!-- Using the diary_style.css that's already included in base.html -->
+<style>    
+    /* Chat toggle button */
+    .chat-toggle-btn {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 50px;
+        height: 50px;
+        background-color: var(--diary-secondary-color);
+        color: var(--diary-text-color);
+        border: none;
+        border-radius: 50%;
+        font-size: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 3px 3px 10px var(--diary-shadow-color);
+        transition: all 0.3s ease;
+        z-index: 100;
+    }
+    
+    .chat-toggle-btn:hover {
+        transform: scale(1.1);
+        background-color: var(--diary-highlight-color);
+        color: var(--diary-paper-color);
+    }
+    
+    .chat-toggle-btn.active {
+        background-color: var(--diary-send-btn);
+        color: white;
+    }
+    
+    /* Fixed height for diary display with scrollbar */
+    .diary-display {
+        max-height: 400px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: var(--diary-highlight-color) var(--diary-paper-color);
+    }
+    
+    .diary-display::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    .diary-display::-webkit-scrollbar-track {
+        background: var(--diary-paper-color);
+    }
+    
+    .diary-display::-webkit-scrollbar-thumb {
+        background-color: var(--diary-highlight-color);
+        border-radius: 6px;
+        border: 2px solid var(--diary-paper-color);
+    }
+    
+    /* Adjusted sidebar and main content positioning */
+    .mood-canvas-page .container {
+        display: flex;
+        align-items: stretch;
+        height: auto;
+    }
+    
+    .sidebar {
+        width: 350px;
+        flex-shrink: 0;
+        height: auto;
+        max-height: none;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .diary-list {
+        flex: 1;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: var(--diary-highlight-color) var(--diary-secondary-color);
+        max-height: calc(100vh - 200px);
+    }
+    
+    .diary-list::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    .diary-list::-webkit-scrollbar-track {
+        background: var(--diary-secondary-color);
+    }
+    
+    .diary-list::-webkit-scrollbar-thumb {
+        background-color: var(--diary-highlight-color);
+        border-radius: 6px;
+        border: 2px solid var(--diary-secondary-color);
+    }
+    
+    .main-content {
+        flex: 1;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .diary-container {
+        height: 100%;
+        margin-bottom: 0;
+    }
+    
+    .diary-title {
+        font-family: 'Special Elite', cursive;
+        font-size: 2rem;
+        text-align: center;
+        margin-bottom: 15px;
+        color: var(--diary-text-color);
+        text-shadow: 2px 2px 3px var(--diary-shadow-color);
+        border-bottom: 2px dashed var(--diary-highlight-color);
+        padding-bottom: 10px;
+    }
+    
+    /* Enhanced notepad interface */
+    .notepad-interface {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .notepad-container {
+        width: 80%;
+        max-width: 900px;
+        height: 80%;
+        background-color: var(--diary-paper-color);
+        border-radius: 10px;
+        box-shadow: 0 10px 30px var(--diary-shadow-color);
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+        position: relative;
+    }
+    
+    .notepad-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        border-bottom: 2px dashed var(--diary-highlight-color);
+        padding-bottom: 10px;
+    }
+    
+    .notepad-title {
+        font-family: 'Special Elite', cursive;
+        font-size: 1.5rem;
+        color: var(--diary-text-color);
+    }
+    
+    .notepad-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: var(--diary-text-color);
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .notepad-close:hover {
+        transform: scale(1.1);
+        color: #e74c3c;
+    }
+    
+    .notepad-toolbar {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+        padding: 10px;
+        background-color: var(--diary-secondary-color);
+        border-radius: 8px;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    
+    .toolbar-btn {
+        background: none;
+        border: none;
+        font-size: 1rem;
+        color: var(--diary-text-color);
+        cursor: pointer;
+        padding: 5px 10px;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+    }
+    
+    .toolbar-btn:hover, .toolbar-btn.active {
+        background-color: var(--diary-highlight-color);
+        color: var(--diary-paper-color);
+    }
+    
+    .toolbar-separator {
+        width: 1px;
+        height: 20px;
+        background-color: var(--diary-text-color);
+        margin: 0 5px;
+        opacity: 0.3;
+    }
+    
+    .notepad-content {
+        flex: 1;
+        overflow-y: auto;
+        background-color: var(--diary-paper-color);
+        background-image: linear-gradient(transparent, transparent 27px, var(--diary-highlight-color) 28px);
+        background-size: 100% 28px;
+        border: 1px solid var(--diary-highlight-color);
+        border-radius: 5px;
+        padding: 14px 20px;
+        line-height: 28px;
+        font-family: 'Homemade Apple', cursive;
+        font-size: 1rem;
+        color: var(--diary-text-color);
+        min-height: 300px;
+        scrollbar-width: thin;
+        scrollbar-color: var(--diary-highlight-color) var(--diary-paper-color);
+        position: relative;
+    }
+    
+    .notepad-content::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    .notepad-content::-webkit-scrollbar-track {
+        background: var(--diary-paper-color);
+    }
+    
+    .notepad-content::-webkit-scrollbar-thumb {
+        background-color: var(--diary-highlight-color);
+        border-radius: 6px;
+        border: 2px solid var(--diary-paper-color);
+    }
+    
+    /* Uploaded images in notepad */
+    .diary-image-container {
+        max-width: 300px;
+        margin: 10px auto;
+        text-align: center;
+        border: 1px solid var(--diary-highlight-color);
+        border-radius: 8px;
+        padding: 5px;
+        background-color: rgba(255, 255, 255, 0.5);
+        display: inline-block;
+        vertical-align: middle;
+        clear: both;
+    }
+    
+    .uploaded-image {
+        width: auto;
+        height: auto;
+        max-width: 100%;
+        max-height: 250px;
+        border-radius: 5px;
+        display: block;
+        margin: 0 auto;
+    }
+    
+    .image-caption {
+        margin-top: 5px;
+        font-size: 0.9rem;
+        font-style: italic;
+        color: var(--diary-text-color);
+        text-align: center;
+        padding: 3px 5px;
+        border-top: 1px dashed var(--diary-highlight-color);
+    }
+    
+    .timestamp-entry {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 10px;
+    }
+    
+    .timestamp-entry-time {
+        min-width: 80px;
+        font-family: 'Special Elite', cursive;
+        font-size: 0.9rem;
+        color: var(--diary-highlight-color);
+        margin-right: 10px;
+        font-weight: bold;
+    }
+    
+    .timestamp-entry-content {
+        flex: 1;
+    }
+    
+    .notepad-footer {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 15px;
+        padding-top: 10px;
+        border-top: 2px dashed var(--diary-highlight-color);
+    }
+    
+    .notepad-info {
+        font-size: 0.9rem;
+        color: var(--diary-timestamp-color);
+        font-style: italic;
+    }
+    
+    .notepad-actions {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .notepad-btn {
+        padding: 8px 15px;
+        background-color: var(--diary-highlight-color);
+        color: var(--diary-paper-color);
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-family: 'Special Elite', cursive;
+        box-shadow: 2px 2px 5px var(--diary-shadow-color);
+        transition: all 0.3s ease;
+    }
+    
+    .notepad-btn:hover {
+        background-color: var(--diary-text-color);
+        transform: translateY(-2px);
+    }
+    
+    .notepad-btn.save {
+        background-color: #5c8a58;
+    }
+    
+    .notepad-btn.discard {
+        background-color: #e74c3c;
+    }
+    
+    /* Loading indicator */
+    .loading-entries {
+        text-align: center;
+        padding: 20px;
+        font-style: italic;
+        color: var(--diary-text-color);
+    }
+    
+    /* No entries message */
+    .no-entries {
+        padding: 20px;
+        text-align: center;
+        font-style: italic;
+        color: var(--diary-text-color);
+    }
+    .sidebar {
+        width: 350px;
+        flex-shrink: 0;
+        height: 100vh; /* Full viewport height */
+        display: flex;
+        flex-direction: column;
+        overflow: hidden; /* Prevent overall sidebar from scrolling */
+    }
+
+    .diary-list {
+        flex: 1;
+        overflow-y: auto; /* This enables vertical scrolling */
+        scrollbar-width: thin;
+        scrollbar-color: var(--diary-highlight-color) var(--diary-secondary-color);
+        max-height: calc(100vh - 150px); /* Adjust based on your header size */
+        padding-right: 5px; /* Give a little space for the scrollbar */
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Chat Toggle Button -->
+<button class="chat-toggle-btn" id="chatToggleBtn">
+    <i class="fas fa-pen-fancy"></i>
+</button>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal" id="deleteModal">
+    <div class="modal-content">
+        <h3>Delete Entry</h3>
+        <p>Are you sure you want to delete this entry? This action cannot be undone.</p>
+        <div class="modal-actions">
+            <button class="modal-btn cancel" id="cancelDelete">Cancel</button>
+            <button class="modal-btn confirm" id="confirmDelete">Delete</button>
+        </div>
+    </div>
+</div>
+
+<!-- Enhanced Notepad Interface -->
+<div class="notepad-interface" id="notepadInterface">
+    <div class="notepad-container">
+        <div class="notepad-header">
+            <div class="notepad-title">Write in your diary</div>
+            <button class="notepad-close" id="notepadClose"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="notepad-toolbar">
+            <button class="toolbar-btn" id="addTimestampBtn" title="Add Timestamp"><i class="fas fa-clock"></i></button>
+            <div class="toolbar-separator"></div>
+            <button class="toolbar-btn" id="boldBtn" title="Bold"><i class="fas fa-bold"></i></button>
+            <button class="toolbar-btn" id="italicBtn" title="Italic"><i class="fas fa-italic"></i></button>
+            <button class="toolbar-btn" id="underlineBtn" title="Underline"><i class="fas fa-underline"></i></button>
+            <div class="toolbar-separator"></div>
+            <button class="toolbar-btn" id="headingBtn" title="Heading"><i class="fas fa-heading"></i></button>
+            <button class="toolbar-btn" id="quoteBtn" title="Quote"><i class="fas fa-quote-right"></i></button>
+            <button class="toolbar-btn" id="listBtn" title="List"><i class="fas fa-list-ul"></i></button>
+            <div class="toolbar-separator"></div>
+            <label for="notepadImageUpload" class="toolbar-btn" title="Add Image">
+                <i class="fas fa-image"></i>
+                <input type="file" id="notepadImageUpload" accept="image/*" style="display:none">
+            </label>
+            <label for="notepadFileUpload" class="toolbar-btn" title="Add File">
+                <i class="fas fa-paperclip"></i>
+                <input type="file" id="notepadFileUpload" style="display:none">
+            </label>
+            <div class="toolbar-separator"></div>
+            <button class="toolbar-btn" id="emojiBtn" title="Add Emoji"><i class="far fa-smile"></i></button>
+            <button class="toolbar-btn" id="clearFormattingBtn" title="Clear Formatting"><i class="fas fa-remove-format"></i></button>
+        </div>
+        <div class="notepad-content" id="notepadContent" contenteditable="true">
+            <!-- This will be filled with user content -->
+        </div>
+        <div class="notepad-footer">
+            <div class="notepad-info">Use toolbar buttons to format your text. Press Enter to create new paragraphs.</div>
+            <div class="notepad-actions">
+                <button class="notepad-btn discard" id="discardBtn">Discard</button>
+                <button class="notepad-btn save" id="saveNotepadBtn">Save to Diary</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Sidebar with Diary Entries -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>My Entries</h2>
+        </div>
+        <div class="diary-list" id="diaryList">
+            {% if entries %}
+                {% for entry in entries %}
+                <div class="diary-entry" data-id="{{ entry._id }}">
+                    <div class="corner-fold"></div>
+                    <h3>{{ entry.title }} {% if entry.messages|length > 0 %}<i class="fas fa-comment-dots"></i>{% endif %}</h3>
+                    <span class="entry-time">{{ entry.created_at.strftime('%B %d, %Y - %I:%M %p') }}</span>
+                    <div class="entry-content">{{ entry.content|striptags|truncate(80) }}</div>
+                    <div class="entry-actions">
+                        <button class="entry-btn like-btn {% if entry.liked %}active{% endif %}" data-id="{{ entry._id }}">
+                            <i class="{% if entry.liked %}fas{% else %}far{% endif %} fa-heart"></i>
+                        </button>
+                        <button class="entry-btn delete-btn" data-id="{{ entry._id }}"><i class="far fa-trash-alt"></i></button>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-entries">No entries yet. Click the button below to create your first diary entry.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="diary-container">
+            <div class="paper-texture"></div>
+            <div class="diary-title">
+                {% if alter_ego %}
+                    Mood Canvas - {{ alter_ego.name }}
+                {% else %}
+                    Mood Canvas
+                {% endif %}
+            </div>
+            <div class="diary-header">
+                <div class="mood-selection">
+                    <div class="mood-item" data-mood="happy">😊</div>
+                    <div class="mood-item" data-mood="sad">😢</div>
+                    <div class="mood-item" data-mood="excited">😃</div>
+                    <div class="mood-item" data-mood="angry">😠</div>
+                    <div class="mood-item" data-mood="neutral">😐</div>
+                </div>
+                <div style="flex: 1; display: flex; flex-direction: column;">
+                    <div class="current-date" id="currentDate" style="font-style: italic; font-size: 0.9rem; color: var(--diary-timestamp-color); margin-bottom: 5px;"></div>
+                    <input type="text" class="title-input" id="diaryTitle" placeholder="What's on your mind today?">
+                </div>
+            </div>
+            <div class="diary-content">
+                <!-- Timestamp display for the current entry -->
+                <div class="entry-timestamp" id="entryTimestamp"></div>
+                
+                <!-- Display area for diary entries -->
+                <div class="diary-display" id="diaryDisplay">
+                    <!-- Entry content will be loaded dynamically -->
+                </div>
+            </div>
+            
+            
+            
+            <div class="diary-controls">
+                <button class="diary-btn clear" id="clearBtn">Clear</button>
+                <button class="diary-btn save" id="saveBtn">Save Entry</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Thinking indicator (hidden by default) -->
+<div class="thinking-indicator" style="display: none;">
+    <span></span>
+    <span></span>
+    <span></span>
+</div>
+
+<!-- Toast notification -->
+<div class="toast" id="toast" style="opacity: 0;">Entry saved successfully!</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // DOM Elements
+    const diaryList = document.getElementById('diaryList');
+    const diaryDisplay = document.getElementById('diaryDisplay');
+    const chatToggleBtn = document.getElementById('chatToggleBtn');
+    const notepadInterface = document.getElementById('notepadInterface');
+    const notepadClose = document.getElementById('notepadClose');
+    const discardBtn = document.getElementById('discardBtn');
+    const saveNotepadBtn = document.getElementById('saveNotepadBtn');
+    const notepadContent = document.getElementById('notepadContent');
+    const diaryTitle = document.getElementById('diaryTitle');
+    const entryTimestamp = document.getElementById('entryTimestamp');
+    const moodItems = document.querySelectorAll('.mood-item');
+    const deleteModal = document.getElementById('deleteModal');
+    const cancelDelete = document.getElementById('cancelDelete');
+    const confirmDelete = document.getElementById('confirmDelete');
+    const saveBtn = document.getElementById('saveBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const toast = document.getElementById('toast');
+    
+    // Global variables
+    let currentDateId = null;
+    let currentMood = 'neutral';
+    let selectedEntryForDeletion = null;
+    
+    // Set current date in the header
+    const now = new Date();
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', options);
+    
+    // Initialize diary by loading entries right away
+    loadEntries();
+    
+    // Notepad Interface Functions
+    
+    // Open notepad for new entry
+    chatToggleBtn.addEventListener('click', function() {
+        this.classList.add('active');
+        notepadInterface.style.display = 'flex';
+        notepadContent.innerHTML = '';
+        notepadContent.focus();
+    });
+    
+    // Close notepad
+    function closeNotepad() {
+        notepadInterface.style.display = 'none';
+        chatToggleBtn.classList.remove('active');
+        notepadContent.innerHTML = '';
+    }
+    
+    notepadClose.addEventListener('click', closeNotepad);
+    discardBtn.addEventListener('click', closeNotepad);
+    
+    // Modify the saveNotepadBtn click handler
+    saveNotepadBtn.addEventListener('click', function() {
+        const content = notepadContent.innerHTML;
+        
+        if (!content.trim()) {
+            showToast('Please write something before saving', 'error');
+            return;
+        }
+        
+        // Get title from the title input
+        const title = diaryTitle.value || 'Untitled';
+        
+        // Get today's date in YYYY-MM-DD format
+        const today = new Date().toISOString().split('T')[0];
+        
+        // If we're already looking at today's entry, add to it
+        if (currentDateId === today) {
+            // Add to existing conversation
+            addMessageToDate(currentDateId, content);
+        } else {
+            // Create new entry for today
+            createEntry(content, title);
+        }
+        
+        closeNotepad();
+    });
+
+    // Create a new entry with title
+    function createEntry(content, title = 'Untitled') {
+        fetch('/diary/entry', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                content: content,
+                title: title
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Entry saved successfully!');
+                
+                // If there's an AI response, show it
+                if (data.response) {
+                    // Wait a moment then load the date
+                    setTimeout(() => {
+                        loadEntry(data.date);
+                        
+                        // Also refresh the entries list
+                        loadEntries();
+                    }, 500);
+                } else {
+                    // Refresh the entries list
+                    loadEntries();
+                    
+                    // Wait a moment then load today's date
+                    setTimeout(() => {
+                        const today = new Date().toISOString().split('T')[0];
+                        loadEntry(today);
+                    }, 500);
+                }
+            } else {
+                showToast('Failed to save entry', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error creating entry:', error);
+            showToast('Failed to save entry', 'error');
+        });
+    }
+
+    // Add a message to an existing date's conversation
+    function addMessageToDate(dateId, content) {
+        fetch(`/diary/entry/${dateId}/message`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                content: content
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Message added successfully!');
+                
+                // Reload the current date to show the new message
+                loadEntry(dateId);
+            } else {
+                showToast('Failed to add message', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error adding message:', error);
+            showToast('Failed to add message', 'error');
+        });
+    }
+
+    // Update the title for a date
+    function updateTitle(dateId, title) {
+        fetch(`/diary/entry/${dateId}/title`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                title: title
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Title updated successfully!');
+                
+                // Update the sidebar entry title
+                const entryElement = document.querySelector(`.diary-entry[data-id="${dateId}"] h3`);
+                if (entryElement) {
+                    // Keep any existing AI indicator icon
+                    const aiIndicator = entryElement.querySelector('i') ? entryElement.querySelector('i').outerHTML : '';
+                    entryElement.innerHTML = `${title} ${aiIndicator}`;
+                }
+            } else {
+                showToast('Failed to update title', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error updating title:', error);
+            showToast('Failed to update title', 'error');
+        });
+    }
+
+    // Modify the loadEntry function
+    function loadEntry(dateId) {
+        if (!dateId) return;
+        
+        currentDateId = dateId;
+        
+        // Highlight selected entry
+        document.querySelectorAll('.diary-entry').forEach(entry => {
+            if (entry.getAttribute('data-id') === dateId) {
+                entry.classList.add('active');
+            } else {
+                entry.classList.remove('active');
+            }
+        });
+        
+        // Show loading state
+        diaryDisplay.innerHTML = '<div class="loading" style="text-align: center; padding: 20px;">Loading entries...</div>';
+        
+        fetch(`/diary/entry/${dateId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.entry) {
+                    displayEntry(data.entry);
+                } else {
+                    // Check if this is today's date
+                    const today = new Date().toISOString().split('T')[0];
+                    
+                    if (dateId === today) {
+                        diaryDisplay.innerHTML = `
+                            <div class="empty-day-message" style="text-align: center; padding: 40px 20px; font-style: italic; color: var(--diary-text-color);">
+                                <p>What's on your mind today?</p>
+                                <p>Click the pen button to start writing.</p>
+                            </div>
+                        `;
+                    } else {
+                        // Format the date for display
+                        const formattedDate = new Date(dateId + 'T00:00:00').toLocaleDateString('en-US', {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                        });
+                        
+                        diaryDisplay.innerHTML = `
+                            <div class="empty-day-message" style="text-align: center; padding: 40px 20px; font-style: italic; color: var(--diary-text-color);">
+                                <p>You haven't written anything on ${formattedDate}.</p>
+                                <p>Click the pen button to add an entry for this day.</p>
+                            </div>
+                        `;
+                    }
+                    
+                    // Set an appropriate title for this empty day
+                    diaryTitle.value = "My thoughts for " + new Date(dateId + 'T00:00:00').toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                    });
+                    
+                    // Set timestamp
+                    entryTimestamp.textContent = new Date(dateId + 'T00:00:00').toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    });
+                    
+                    // Reset mood to neutral
+                    moodItems.forEach(item => {
+                        if (item.getAttribute('data-mood') === 'neutral') {
+                            item.classList.add('selected');
+                        } else {
+                            item.classList.remove('selected');
+                        }
+                    });
+                    currentMood = 'neutral';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading entry:', error);
+                diaryDisplay.innerHTML = '<div class="entry-error" style="text-align: center; padding: 20px; color: #e74c3c;">Failed to load entry</div>';
+            });
+    }
+
+    // Modify the title input to update in real-time
+    diaryTitle.addEventListener('input', function() {
+        if (currentDateId) {
+            // Update the sidebar title in real-time
+            const entryElement = document.querySelector(`.diary-entry[data-id="${currentDateId}"] h3`);
+            if (entryElement) {
+                // Keep any existing AI indicator icon
+                const aiIndicator = entryElement.querySelector('i') ? entryElement.querySelector('i').outerHTML : '';
+                entryElement.innerHTML = `${this.value || 'Untitled'} ${aiIndicator}`;
+            }
+        }
+    });
+
+    // Then save on change/blur
+    diaryTitle.addEventListener('change', function() {
+        if (currentDateId) {
+            updateTitle(currentDateId, this.value || 'Untitled');
+        }
+    });
+
+    // Function to load diary entries
+    function loadEntries() {
+        console.log('Loading entries...');
+        fetch('/diary/entries')
+            .then(response => response.json())
+            .then(data => {
+                console.log('Entries received:', data.entries ? data.entries.length : 0);
+                if (data.entries && data.entries.length > 0) {
+                    renderEntryList(data.entries);
+                    // Load the first entry automatically
+                    loadEntry(data.entries[0].id);
+                } else {
+                    // No entries yet
+                    diaryList.innerHTML = '<div class="no-entries">No entries yet. Click the button below to create your first diary entry.</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading entries:', error);
+                diaryList.innerHTML = '<div class="no-entries">Failed to load entries. Please refresh the page.</div>';
+            });
+    }
+    
+    // Delete an entry
+    function deleteEntry(entryId) {
+        fetch(`/diary/entry/${entryId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Entry deleted successfully!');
+                
+                // Reload entries
+                loadEntries();
+                
+                // Clear current display if we're viewing the deleted entry
+                if (currentDateId === entryId) {
+                    diaryDisplay.innerHTML = '';
+                    diaryTitle.value = '';
+                    entryTimestamp.textContent = '';
+                    currentDateId = null;
+                }
+            } else {
+                showToast('Failed to delete entry', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error deleting entry:', error);
+            showToast('Failed to delete entry', 'error');
+        });
+    }
+    
+    // Load entries for a specific date
+    function loadEntry(dateId) {
+        if (!dateId) return;
+        
+        currentDateId = dateId;
+        
+        // Highlight selected entry
+        document.querySelectorAll('.diary-entry').forEach(entry => {
+            if (entry.getAttribute('data-id') === dateId) {
+                entry.classList.add('active');
+            } else {
+                entry.classList.remove('active');
+            }
+        });
+        
+        // Show loading state
+        diaryDisplay.innerHTML = '<div class="loading" style="text-align: center; padding: 20px;">Loading entries...</div>';
+        
+        fetch(`/diary/entry/${dateId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.entry) {
+                    displayEntry(data.entry);
+                } else {
+                    diaryDisplay.innerHTML = '<div class="entry-error" style="text-align: center; padding: 20px; color: #e74c3c;">Entry not found</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading entry:', error);
+                diaryDisplay.innerHTML = '<div class="entry-error" style="text-align: center; padding: 20px; color: #e74c3c;">Failed to load entry</div>';
+            });
+    }
+    
+    // Display entry content
+    function displayEntry(entry) {
+        // Set title and timestamp
+        diaryTitle.value = entry.title;
+        
+        const entryDate = new Date(entry.created_at);
+        entryTimestamp.textContent = entryDate.toLocaleDateString('en-US', { 
+            weekday: 'long',
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        });
+        
+        // Set mood
+        moodItems.forEach(item => {
+            if (item.getAttribute('data-mood') === entry.mood) {
+                item.classList.add('selected');
+                currentMood = entry.mood;
+            } else {
+                item.classList.remove('selected');
+            }
+        });
+        
+        // Clear display
+        diaryDisplay.innerHTML = '';
+        
+        // Display conversation messages
+        if (entry.messages && entry.messages.length > 0) {
+            entry.messages.forEach(msg => {
+                const msgTimestamp = new Date(msg.timestamp);
+                
+                if (msg.sender === 'alter_ego') {
+                    // Alter ego message
+                    const alterEgoMsg = document.createElement('div');
+                    alterEgoMsg.className = 'message-wrapper alter-ego-message';
+                    
+                    const msgTime = document.createElement('span');
+                    msgTime.className = 'message-timestamp';
+                    msgTime.textContent = msgTimestamp.toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    
+                    const msgContent = document.createElement('div');
+                    msgContent.className = 'message-content';
+                    msgContent.innerHTML = msg.content;
+                    
+                    alterEgoMsg.appendChild(msgTime);
+                    alterEgoMsg.appendChild(msgContent);
+                    diaryDisplay.appendChild(alterEgoMsg);
+                } else if (msg.sender === 'user') {
+                    // User message
+                    const userMsg = document.createElement('div');
+                    userMsg.className = 'message-wrapper user-message';
+                    
+                    const msgTime = document.createElement('span');
+                    msgTime.className = 'message-timestamp';
+                    msgTime.textContent = msgTimestamp.toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    
+                    const msgContent = document.createElement('div');
+                    msgContent.className = 'message-content';
+                    msgContent.innerHTML = msg.content;
+                    
+                    userMsg.appendChild(msgTime);
+                    userMsg.appendChild(msgContent);
+                    diaryDisplay.appendChild(userMsg);
+                }
+            });
+        }
+        
+        // Scroll to bottom
+        diaryDisplay.scrollTop = diaryDisplay.scrollHeight;
+    }
+    
+    // Render entry list in sidebar
+    function renderEntryList(entries) {
+        console.log('Rendering entries list:', entries.length);
+        diaryList.innerHTML = '';
+        
+        entries.forEach(entry => {
+            const entryDate = new Date(entry.created_at);
+            const dateFormatted = entryDate.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+            
+            // Truncate content for preview
+            let contentPreview = entry.content;
+            // Strip HTML tags
+            contentPreview = contentPreview.replace(/<[^>]*>/g, '');
+            // Limit to 80 characters
+            contentPreview = contentPreview.length > 80 ? 
+                contentPreview.substring(0, 80) + '...' : 
+                contentPreview;
+            
+            // Create a placeholder for alter ego responses
+            let lastMessagePreview = '';
+            if (entry.has_ai_response) {
+                lastMessagePreview = `<div class="last-message-preview"><span class="alter-ego-label">✨ </span>View conversation with your alter ego</div>`;
+            }
+            
+            const entryElement = document.createElement('div');
+            entryElement.className = 'diary-entry';
+            entryElement.setAttribute('data-id', entry.id);
+            
+            // Show indicator icon if entry has AI response
+            const aiIndicator = entry.has_ai_response ? '<i class="fas fa-comment-dots"></i>' : '';
+            
+            // Like button status
+            const likeButtonClass = entry.liked ? 'active' : '';
+            const likeButtonIcon = entry.liked ? '<i class="fas fa-heart"></i>' : '<i class="far fa-heart"></i>';
+            
+            // Create the markup for the entry
+            entryElement.innerHTML = `
+                <div class="corner-fold"></div>
+                <h3>${entry.title} ${aiIndicator}</h3>
+                <span class="entry-time">${dateFormatted}</span>
+                <div class="entry-content">${contentPreview}</div>
+                ${lastMessagePreview}
+                <div class="entry-actions">
+                    <button class="entry-btn like-btn ${likeButtonClass}" data-id="${entry.id}">${likeButtonIcon}</button>
+                    <button class="entry-btn delete-btn" data-id="${entry.id}"><i class="far fa-trash-alt"></i></button>
+                </div>
+            `;
+            
+            diaryList.appendChild(entryElement);
+        });
+        
+        // Initialize entry click handlers
+        initializeDiaryEntries();
+    }
+    
+    // Toggle entry like status (simplified for now)
+    function toggleLike(entryId) {
+        // This is a client-side only implementation for now
+        const likeBtn = document.querySelector(`.like-btn[data-id="${entryId}"]`);
+        if (likeBtn) {
+            likeBtn.classList.toggle('active');
+            if (likeBtn.classList.contains('active')) {
+                likeBtn.innerHTML = '<i class="fas fa-heart"></i>';
+            } else {
+                likeBtn.innerHTML = '<i class="far fa-heart"></i>';
+            }
+        }
+        
+        // Note: In a full implementation, we would save this to the database
+        showToast('Like status updated!');
+    }
+    
+    // Show delete confirmation modal
+    function showDeleteConfirmation(entryId) {
+        selectedEntryForDeletion = entryId;
+        deleteModal.style.display = 'flex';
+    }
+    
+    // Show toast notification
+    function showToast(message, type = 'success') {
+        toast.textContent = message;
+        toast.className = 'toast';
+        if (type) {
+            toast.classList.add(type);
+        }
+        toast.style.opacity = '1';
+        
+        setTimeout(() => {
+            toast.style.opacity = '0';
+        }, 3000);
+    }
+    
+    // Initialize diary entries
+    function initializeDiaryEntries() {
+        // Add click events to all diary entries in the sidebar
+        const diaryEntries = document.querySelectorAll('.diary-entry');
+        diaryEntries.forEach(entry => {
+            entry.addEventListener('click', function() {
+                const entryId = this.getAttribute('data-id');
+                loadEntry(entryId);
+            });
+        });
+        
+        // Set up like buttons
+        const likeButtons = document.querySelectorAll('.like-btn');
+        likeButtons.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation(); // Prevent entry expansion
+                const entryId = this.getAttribute('data-id');
+                toggleLike(entryId);
+            });
+        });
+        
+        // Set up delete buttons
+        const deleteButtons = document.querySelectorAll('.delete-btn');
+        deleteButtons.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation(); // Prevent entry expansion
+                const entryId = this.closest('.diary-entry').getAttribute('data-id');
+                showDeleteConfirmation(entryId);
+            });
+        });
+    }
+    
+    // WYSIWYG Toolbar Buttons
+    document.getElementById('boldBtn').addEventListener('click', function() {
+        document.execCommand('bold', false, null);
+        notepadContent.focus();
+    });
+    
+    document.getElementById('italicBtn').addEventListener('click', function() {
+        document.execCommand('italic', false, null);
+        notepadContent.focus();
+    });
+    
+    document.getElementById('underlineBtn').addEventListener('click', function() {
+        document.execCommand('underline', false, null);
+        notepadContent.focus();
+    });
+    
+    document.getElementById('headingBtn').addEventListener('click', function() {
+        document.execCommand('formatBlock', false, '<h3>');
+        notepadContent.focus();
+    });
+    
+    document.getElementById('quoteBtn').addEventListener('click', function() {
+        document.execCommand('formatBlock', false, '<blockquote>');
+        notepadContent.focus();
+    });
+    
+    document.getElementById('listBtn').addEventListener('click', function() {
+        document.execCommand('insertUnorderedList', false, null);
+        notepadContent.focus();
+    });
+    
+    document.getElementById('clearFormattingBtn').addEventListener('click', function() {
+        document.execCommand('removeFormat', false, null);
+        notepadContent.focus();
+    });
+    
+    document.getElementById('addTimestampBtn').addEventListener('click', function() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        
+        document.execCommand('insertHTML', false, 
+            `<div class="timestamp-entry">
+                <div class="timestamp-entry-time">${timeString} -</div>
+                <div class="timestamp-entry-content" contenteditable="true"> </div>
+            </div>`
+        );
+        
+        notepadContent.focus();
+    });
+    
+    // Emoji button functionality
+    document.getElementById('emojiBtn').addEventListener('click', function() {
+        // Simple emoji picker
+        const emojis = ['😊', '😢', '😃', '😠', '😐', '❤️', '🎉', '🌟', '🤔', '👍'];
+        
+        // Create emoji picker
+        const emojiPicker = document.createElement('div');
+        emojiPicker.style.position = 'absolute';
+        emojiPicker.style.zIndex = '1000';
+        emojiPicker.style.background = 'white';
+        emojiPicker.style.border = '1px solid #ccc';
+        emojiPicker.style.borderRadius = '5px';
+        emojiPicker.style.padding = '5px';
+        emojiPicker.style.display = 'flex';
+        emojiPicker.style.flexWrap = 'wrap';
+        emojiPicker.style.gap = '5px';
+        emojiPicker.style.maxWidth = '200px';
+        
+        // Position near the button
+        const rect = this.getBoundingClientRect();
+        emojiPicker.style.top = (rect.bottom + 5) + 'px';
+        emojiPicker.style.left = rect.left + 'px';
+        
+        // Add emojis to picker
+        emojis.forEach(emoji => {
+            const emojiSpan = document.createElement('span');
+            emojiSpan.textContent = emoji;
+            emojiSpan.style.fontSize = '1.5rem';
+            emojiSpan.style.cursor = 'pointer';
+            emojiSpan.style.padding = '5px';
+            
+            emojiSpan.addEventListener('click', function() {
+                document.execCommand('insertText', false, emoji);
+                document.body.removeChild(emojiPicker);
+                notepadContent.focus();
+            });
+            
+            emojiPicker.appendChild(emojiSpan);
+        });
+        
+        // Add to document
+        document.body.appendChild(emojiPicker);
+        
+        // Close picker when clicking outside
+        document.addEventListener('click', function closeEmojiPicker(e) {
+            if (!emojiPicker.contains(e.target) && e.target !== document.getElementById('emojiBtn')) {
+                if (document.body.contains(emojiPicker)) {
+                    document.body.removeChild(emojiPicker);
+                }
+                document.removeEventListener('click', closeEmojiPicker);
+            }
+        });
+    });
+    
+    // Image upload for notepad
+    const notepadImageUpload = document.getElementById('notepadImageUpload');
+    notepadImageUpload.addEventListener('change', function(e) {
+        if (e.target.files.length > 0) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            
+            // Add upload status indicator
+            const uploadStatus = document.createElement('div');
+            uploadStatus.className = 'image-upload-status';
+            uploadStatus.textContent = 'Uploading image...';
+            uploadStatus.style.margin = '10px 0';
+            uploadStatus.style.fontStyle = 'italic';
+            uploadStatus.style.color = 'var(--diary-highlight-color)';
+            uploadStatus.style.display = 'flex';
+            uploadStatus.style.alignItems = 'center';
+            
+            // Add spinning indicator before text
+            uploadStatus.style.position = 'relative';
+            uploadStatus.style.paddingLeft = '25px';
+            
+            const spinner = document.createElement('div');
+            spinner.style.position = 'absolute';
+            spinner.style.left = '0';
+            spinner.style.width = '16px';
+            spinner.style.height = '16px';
+            spinner.style.border = '2px solid var(--diary-highlight-color)';
+            spinner.style.borderTopColor = 'transparent';
+            spinner.style.borderRadius = '50%';
+            spinner.style.animation = 'spin 1s linear infinite';
+            
+            uploadStatus.appendChild(spinner);
+            
+            // Insert the upload status
+            const selection = window.getSelection();
+            if (selection.rangeCount > 0) {
+                const range = selection.getRangeAt(0);
+                range.deleteContents();
+                range.insertNode(uploadStatus);
+            } else {
+                notepadContent.appendChild(uploadStatus);
+            }
+            
+            reader.onload = function(e) {
+                // Create container for the image to control its size
+                const imageContainer = document.createElement('div');
+                imageContainer.className = 'diary-image-container';
+                
+                // Create image element with fixed dimensions
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.className = 'uploaded-image';
+                
+                // Add caption area
+                const caption = document.createElement('div');
+                caption.contentEditable = true;
+                caption.className = 'image-caption';
+                caption.innerHTML = 'Add a caption...';
+                
+                // Focus and select all text when clicked
+                caption.addEventListener('focus', function() {
+                    if (this.innerHTML === 'Add a caption...') {
+                        this.innerHTML = '';
+                    }
+                    document.execCommand('selectAll', false, null);
+                });
+                
+                // Reset if left empty
+                caption.addEventListener('blur', function() {
+                    if (this.innerHTML === '') {
+                        this.innerHTML = 'Add a caption...';
+                    }
+                });
+                
+                // Add the image and caption to the container
+                imageContainer.appendChild(img);
+                imageContainer.appendChild(caption);
+                
+                // Replace upload status with the image container
+                if (uploadStatus.parentNode) {
+                    uploadStatus.parentNode.replaceChild(imageContainer, uploadStatus);
+                } else {
+                    notepadContent.appendChild(imageContainer);
+                }
+                
+                // Focus back on notepad content
+                notepadContent.focus();
+            };
+            
+            reader.readAsDataURL(file);
+            
+            // Reset file input
+            notepadImageUpload.value = '';
+        }
+    });
+    
+    // Event Listeners for Diary Controls
+    
+    // Save button
+    saveBtn.addEventListener('click', function() {
+        // Instead of saving title/mood, now we just send another message for the current date
+        if (!currentDateId) {
+            showToast('No date selected', 'error');
+            return;
+        }
+        
+        // Show new notepad to send a message
+        chatToggleBtn.click();
+    });
+    
+    // Clear button
+    clearBtn.addEventListener('click', function() {
+        // Clear display and reset state
+        diaryDisplay.innerHTML = '';
+        diaryTitle.value = '';
+        entryTimestamp.textContent = '';
+        moodItems.forEach(item => item.classList.remove('selected'));
+        currentMood = 'neutral';
+        currentDateId = null;
+    });
+    
+    // Mood selection (simplified, just visual indication for now)
+    moodItems.forEach(item => {
+        item.addEventListener('click', function() {
+            // Remove selected class from all mood items
+            moodItems.forEach(i => i.classList.remove('selected'));
+            
+            // Add selected class to clicked item
+            this.classList.add('selected');
+            
+            // Update current mood
+            currentMood = this.getAttribute('data-mood');
+        });
+    });
+    
+    // Delete confirmation buttons
+    cancelDelete.addEventListener('click', function() {
+        deleteModal.style.display = 'none';
+        selectedEntryForDeletion = null;
+    });
+    
+    confirmDelete.addEventListener('click', function() {
+        if (selectedEntryForDeletion) {
+            deleteEntry(selectedEntryForDeletion);
+            deleteModal.style.display = 'none';
+            selectedEntryForDeletion = null;
+        }
+    });
+    
+    // Add CSS for active entry and container sizing
+    const style = document.createElement('style');
+    style.textContent += `
+        /* Last message preview in sidebar */
+        .last-message-preview {
+            font-size: 0.7rem;
+            color: var(--diary-text-color);
+            opacity: 0.85;
+            font-style: italic;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            border-top: 1px dotted rgba(0,0,0,0.1);
+            padding-top: 3px;
+        }
+        
+        .alter-ego-label {
+            color: var(--diary-highlight-color);
+            font-weight: bold;
+        }
+        
+        /* Adjusted entries to ensure consistent display */
+        .diary-entry {
+            height: auto !important;
+            min-height: 120px !important;
+            max-height: 160px !important;
+            padding: 12px;
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            border-radius: 5px;
+            background-color: var(--diary-paper-color);
+            box-shadow: 2px 2px 5px var(--diary-shadow-color);
+            transition: transform 0.2s ease;
+        }
+        
+        .diary-entry h3 {
+            margin: 0 0 5px 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 1.1rem;
+            margin-bottom: 3px;
+        }
+        
+        .entry-time {
+            font-size: 0.8rem;
+            color: var(--diary-timestamp-color);
+            margin-bottom: 5px;
+        }
+        
+        .entry-content {
+            flex: 1;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+            text-overflow: ellipsis;
+            font-size: 1.3rem;
+            line-height: 1.9;
+            margin-bottom: 3px;
+        }
+        
+        .entry-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: auto;
+        }
+    `;
+        document.head.appendChild(style);
+    });
+</script>
+{% endblock %}

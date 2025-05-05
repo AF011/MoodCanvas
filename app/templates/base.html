@@ -1,0 +1,657 @@
+<!-- app/templates/base.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <title>{% block title %}Mood Canvas{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo.png') }}">
+    <!-- Fallback favicon -->    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/diary_style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;500;600;700&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    {% block extra_css %}{% endblock %}
+    <style>
+        :root {
+            --primary: #8A2BE2;
+            --primary-dark: #6B1E99;
+            --primary-light: #A864FD;
+            --secondary: #FF6B95;
+            --secondary-dark: #E25377;
+            --secondary-light: #FF8FAF;
+            --dark: #202040;
+            --dark-alt: #2D2D5F;
+            --light: #F9F7FD;
+            --gray: #6c757d;
+            --success: #48d494;
+            --warning: #ffd166;
+            --danger: #ef476f;
+            --info: #118ab2;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: var(--dark);
+            color: var(--light);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.4s ease, color 0.4s ease;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .handwritten {
+            font-family: 'Dancing Script', cursive;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"),
+                radial-gradient(circle at 15% 25%, rgba(138, 43, 226, 0.08) 0%, transparent 45%),
+                radial-gradient(circle at 85% 75%, rgba(255, 107, 149, 0.08) 0%, transparent 45%);
+            z-index: -1;
+        }
+
+        /* Header styling */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 30px;
+            background-color: rgba(45, 45, 95, 0.92);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(138, 43, 226, 0.2);
+            transition: background-color 0.4s ease, border-color 0.4s ease;
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo-img {
+            height: 40px;
+            margin-right: 15px;
+            filter: drop-shadow(0 0 8px rgba(138, 43, 226, 0.4));
+            transition: transform 0.3s ease;
+        }
+
+        .logo-img:hover {
+            transform: scale(1.1) rotate(5deg);
+        }
+        
+        .brand-name {
+            font-size: 1.7rem;
+            font-weight: 700;
+            font-family: 'Dancing Script', cursive;
+            background: linear-gradient(45deg, var(--primary-light), var(--secondary-light));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 2px 8px rgba(138, 43, 226, 0.25);
+            letter-spacing: 1px;
+        }
+        
+        .nav-menu {
+            display: flex;
+            gap: 20px;
+        }
+
+        .nav-menu .nav-item {
+            position: relative;
+        }
+        
+        .nav-menu a {
+            text-decoration: none;
+            color: var(--light);
+            font-weight: 600;
+            padding: 8px 15px;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 15px;
+            letter-spacing: 0.3px;
+        }
+        
+        .nav-menu a:hover {
+            color: var(--light);
+        }
+
+        .nav-menu a::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 25px;
+            z-index: -1;
+            transition: opacity 0.3s ease;
+            opacity: 0;
+        }
+
+        .nav-menu a:hover::before {
+            opacity: 1;
+        }
+        
+        .nav-menu a.active::before {
+            opacity: 1;
+        }
+
+        .nav-menu a i {
+            font-size: 16px;
+        }
+
+        .nav-menu a .nav-indicator {
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--secondary);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .nav-menu a.active .nav-indicator {
+            opacity: 1;
+            box-shadow: 0 0 10px var(--secondary);
+        }
+
+        .main-content {
+            margin-top: 80px;
+            padding: 20px;
+            flex: 1;
+        }
+        
+        /* Only show header on authenticated pages */
+        .auth-page .header {
+            display: none;
+        }
+        
+        /* Add padding to body to account for fixed header */
+        body {
+            padding-top: 70px;
+        }
+        
+        /* Don't add padding on auth pages */
+        body.auth-page {
+            padding-top: 0;
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: var(--light);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            margin-left: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            width: 38px;
+            height: 38px;
+            overflow: hidden;
+        }
+
+        .theme-toggle::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            transform: scale(0);
+            transition: transform 0.3s ease;
+        }
+
+        .theme-toggle:hover::before {
+            transform: scale(1);
+        }
+
+        .theme-toggle i {
+            transition: transform 0.5s ease, opacity 0.3s ease;
+        }
+
+        .theme-toggle .fa-moon {
+            position: absolute;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .theme-toggle.dark .fa-sun {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+
+        .theme-toggle.dark .fa-moon {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Light theme */
+        body.light-theme {
+            background: #f6f3fb;
+            color: #333;
+        }
+
+        body.light-theme::before {
+            background: 
+                url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"),
+                radial-gradient(circle at 15% 25%, rgba(138, 43, 226, 0.04) 0%, transparent 45%),
+                radial-gradient(circle at 85% 75%, rgba(255, 107, 149, 0.04) 0%, transparent 45%);
+        }
+
+        body.light-theme .header {
+            background-color: rgba(255, 255, 255, 0.92);
+            border-bottom: 1px solid rgba(138, 43, 226, 0.1);
+        }
+
+        body.light-theme .nav-menu a {
+            color: #333;
+        }
+
+        body.light-theme .theme-toggle {
+            color: #333;
+        }
+
+        /* Footer styling */
+        .footer {
+            margin-top: auto;
+            background: linear-gradient(to right, rgba(45, 45, 95, 0.92), rgba(50, 45, 95, 0.92));
+            backdrop-filter: blur(8px);
+            padding: 20px 0 15px;
+            position: relative;
+            overflow: hidden;
+            border-top: 1px solid rgba(138, 43, 226, 0.2);
+            transition: background 0.4s ease, border-color 0.4s ease;
+            width: 100%;
+            left: 0;
+            right: 0;
+        }
+
+        .footer::before {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            filter: blur(2px);
+        }
+
+        .footer-content {
+            width: 100%;
+            padding: 0 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .footer-title {
+            color: var(--light);
+            margin-bottom: 10px;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            gap: 6px;
+            font-family: 'Dancing Script', cursive;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            transition: color 0.4s ease;
+        }
+
+        .emoji {
+            font-size: 22px;
+            display: inline-block;
+            animation: float 2s ease-in-out infinite;
+            position: relative;
+            top: -2px;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+
+        .footer-team {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 8px;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .team-member {
+            position: relative;
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-family: 'Dancing Script', cursive;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            background: rgba(138, 43, 226, 0.15);
+            border: 1px solid rgba(138, 43, 226, 0.2);
+            cursor: default;
+            color: var(--light);
+            transition: background 0.4s ease, color 0.4s ease, border-color 0.4s ease;
+        }
+
+        .team-member:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            background: rgba(138, 43, 226, 0.25);
+        }
+
+        .copyright {
+            margin-top: 12px;
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.8);
+            position: relative;
+            padding: 8px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            font-family: 'Dancing Script', cursive;
+            transition: color 0.4s ease, background 0.4s ease;
+        }
+
+        /* Light theme footer */
+        body.light-theme .footer {
+            background: linear-gradient(to right, rgba(245, 240, 255, 0.92), rgba(250, 240, 250, 0.92));
+            border-top: 1px solid rgba(138, 43, 226, 0.1);
+        }
+
+        body.light-theme .footer-title {
+            color: #333;
+        }
+
+        body.light-theme .team-member {
+            background: rgba(138, 43, 226, 0.08);
+            color: #333;
+            border-color: rgba(138, 43, 226, 0.15);
+        }
+
+        body.light-theme .team-member:hover {
+            background: rgba(138, 43, 226, 0.15);
+        }
+
+        body.light-theme .copyright {
+            color: #333;
+            background: rgba(138, 43, 226, 0.08);
+        }
+
+        /* Magical sparkles */
+        .sparkle {
+            position: absolute;
+            pointer-events: none;
+            z-index: 10;
+            border-radius: 50%;
+            background: white;
+            box-shadow: 0 0 10px 2px white;
+            opacity: 0;
+            animation: sparkle-fade 700ms ease-in;
+        }
+
+        @keyframes sparkle-fade {
+            0% {
+                opacity: 0;
+                transform: scale(0);
+            }
+            20% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            80% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0);
+            }
+        }
+
+        /* Don't show footer on auth pages */
+        .auth-page .footer {
+            display: none;
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 992px) {
+            .brand-name {
+                font-size: 1.5rem;
+            }
+            
+            .nav-menu {
+                gap: 15px;
+            }
+            
+            .nav-menu a {
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                padding: 12px;
+                gap: 12px;
+            }
+            
+            .nav-menu {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .nav-menu a span {
+                display: none;
+            }
+
+            .nav-menu a {
+                justify-content: center;
+                padding: 8px;
+                font-size: 18px;
+            }
+
+            .theme-toggle {
+                position: absolute;
+                top: 12px;
+                right: 12px;
+            }
+            
+            body {
+                padding-top: 110px;
+            }
+            
+            .footer-title {
+                text-align: center;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body class="{% block body_class %}{% endblock %}">
+    <header class="header">
+        <div class="logo-container">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Mood Canvas Logo" class="logo-img">
+            <div class="brand-name">Mood Canvas</div>
+        </div>
+        <nav class="nav-menu">
+            <div class="nav-item">
+                <a href="#" class="{% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                    <div class="nav-indicator"></div>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="{{ url_for('mood_canvas.index') }}" class="{% if request.endpoint == 'mood_canvas.index' %}active{% endif %}">
+                    <i class="fas fa-book-open"></i>
+                    <span>Personal Diary</span>
+                    <div class="nav-indicator"></div>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="#" class="{% if request.endpoint == 'profile.index' %}active{% endif %}">
+                    <i class="fas fa-user"></i>
+                    <span>Profile</span>
+                    <div class="nav-indicator"></div>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="{{ url_for('auth.logout') }}" class="{% if request.endpoint == 'auth.logout' %}active{% endif %}">
+                    <i class="fas fa-user"></i>
+                    <span>Logout</span>
+                    <div class="nav-indicator"></div>
+                </a>
+            </div>
+        </nav>
+        <button class="theme-toggle" id="themeToggle">
+            <i class="fas fa-sun"></i>
+            <i class="fas fa-moon"></i>
+        </button>
+    </header>
+    
+    <div class="main-content">
+        {% block content %}{% endblock %}
+    </div>
+    
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-title">
+                <span>An AF's Endevor developed with</span>
+                <span class="emoji">🥤</span>
+                <span>and</span>
+                <span class="emoji">💡</span>
+            </div>
+            <div class="footer-team">
+                <div class="team-member">Abdul Faheem</div>
+                <div class="team-member">Kousik</div>
+                <div class="team-member">Shrini</div>
+                <div class="team-member">Kalyan</div>
+            </div>
+            <div class="copyright">
+                Developed by Team Beacons
+            </div>
+        </div>
+    </footer>
+    
+    {% block scripts %}{% endblock %}
+    <script>
+        // Theme toggle functionality
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
+        
+        // Check for saved theme preference
+        if (localStorage.getItem('theme') === 'light') {
+            body.classList.add('light-theme');
+            themeToggle.classList.add('dark');
+        }
+        
+        themeToggle.addEventListener('click', () => {
+            if (body.classList.contains('light-theme')) {
+                body.classList.remove('light-theme');
+                themeToggle.classList.remove('dark');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                body.classList.add('light-theme');
+                themeToggle.classList.add('dark');
+                localStorage.setItem('theme', 'light');
+            }
+        });
+        
+        // Magical sparkle effect
+        document.addEventListener('mousemove', function(e) {
+            // Only create sparkles occasionally
+            if (Math.random() > 0.98) {
+                createSparkle(e.pageX, e.pageY);
+            }
+        });
+        
+        function createSparkle(x, y) {
+            const sparkle = document.createElement('div');
+            sparkle.className = 'sparkle';
+            
+            // Random size
+            const size = Math.random() * 15 + 5;
+            sparkle.style.width = `${size}px`;
+            sparkle.style.height = `${size}px`;
+            
+            // Position
+            sparkle.style.left = `${x - size/2}px`;
+            sparkle.style.top = `${y - size/2}px`;
+            
+            // Random color
+            const hue = Math.random() * 60 + 250; // Blue/purple range
+            sparkle.style.background = `hsl(${hue}, 100%, 70%)`;
+            sparkle.style.boxShadow = `0 0 ${size/2}px hsl(${hue}, 100%, 70%)`;
+            
+            document.body.appendChild(sparkle);
+            
+            // Remove after animation completes
+            setTimeout(() => {
+                if (sparkle.parentNode) {
+                    sparkle.parentNode.removeChild(sparkle);
+                }
+            }, 700);
+        }
+        
+        // Add sparkles to interactive elements
+        document.querySelectorAll('a, button, .team-member').forEach(el => {
+            el.addEventListener('mouseover', function() {
+                const rect = this.getBoundingClientRect();
+                const x = rect.left + rect.width / 2 + window.scrollX;
+                const y = rect.top + rect.height / 2 + window.scrollY;
+                
+                // Create multiple sparkles
+                for (let i = 0; i < 3; i++) {
+                    setTimeout(() => {
+                        const offsetX = (Math.random() - 0.5) * rect.width;
+                        const offsetY = (Math.random() - 0.5) * rect.height;
+                        createSparkle(x + offsetX, y + offsetY);
+                    }, i * 100);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

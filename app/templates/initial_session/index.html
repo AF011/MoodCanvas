@@ -1,0 +1,1155 @@
+<!-- app/templates/initial_session/index.html -->
+{% extends "base.html" %}
+
+{% block title %}Discover Your Alter Ego | Mood Canvas{% endblock %}
+
+{% block body_class %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chat-container {
+        max-width: 900px;
+        padding: 25px;
+        background-color: rgba(255, 255, 255, 0.85);
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(138, 43, 226, 0.2);
+    }
+
+    .chat-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 5px;
+        background: linear-gradient(90deg, var(--primary), var(--secondary));
+    }
+
+    .chat-header {
+        text-align: center;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid rgba(138, 43, 226, 0.1);
+        position: relative;
+    }
+
+    .chat-header h1 {
+        color: var(--primary);
+        margin-bottom: 8px;
+        font-weight: 700;
+        font-size: 2rem;
+        background: linear-gradient(45deg, var(--primary-light), var(--secondary-light));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+
+    .chat-header p {
+        color: var(--gray);
+        font-size: 1.1rem;
+    }
+
+    .chat-messages {
+        height: 450px;
+        overflow-y: auto;
+        padding: 20px;
+        border: 1px solid rgba(138, 43, 226, 0.15);
+        border-radius: 12px;
+        margin-bottom: 20px;
+        background-color: rgba(249, 247, 253, 0.8);
+        scrollbar-width: thin;
+        scrollbar-color: var(--primary) #f0f0f0;
+    }
+
+    /* Customize scrollbar for light and dark mode */
+    .chat-messages::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .chat-messages::-webkit-scrollbar-track {
+        background: rgba(240, 240, 240, 0.5);
+        border-radius: 10px;
+    }
+
+    .chat-messages::-webkit-scrollbar-thumb {
+        background: var(--primary);
+        border-radius: 10px;
+    }
+
+    body.light-theme .chat-messages {
+        background-color: rgba(255, 255, 255, 0.8);
+    }
+
+    .message {
+        max-width: 80%;
+        padding: 12px 18px;
+        border-radius: 18px;
+        margin-bottom: 20px;
+        line-height: 1.5;
+        font-size: 16px;
+        position: relative;
+        animation: fadeIn 0.3s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .user-message {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+        color: white;
+        margin-left: auto;
+        border-bottom-right-radius: 5px;
+        box-shadow: 0 3px 10px rgba(138, 43, 226, 0.2);
+    }
+
+    .ai-message {
+        background-color: white;
+        color: var(--dark);
+        margin-right: auto;
+        border-bottom-left-radius: 5px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+        border-left: 4px solid var(--secondary);
+    }
+
+    body.light-theme .ai-message {
+        background-color: white;
+        color: #333;
+    }
+
+    .message-time {
+        font-size: 0.7rem;
+        color: rgba(255, 255, 255, 0.8);
+        position: absolute;
+        bottom: -18px;
+        right: 10px;
+    }
+
+    .ai-message .message-time {
+        color: var(--gray);
+    }
+
+    .chat-input-container {
+        position: relative;
+        margin-top: 30px;
+    }
+
+    .chat-input {
+        display: flex;
+        gap: 10px;
+        background-color: rgba(255, 255, 255, 0.9);
+        padding: 15px;
+        border-radius: 12px;
+        box-shadow: 0 3px 15px rgba(0, 0, 0, 0.08);
+        align-items: center;
+        border: 1px solid rgba(138, 43, 226, 0.15);
+    }
+
+    body.light-theme .chat-input {
+        background-color: white;
+    }
+
+    .chat-input textarea {
+        flex: 1;
+        padding: 12px 15px;
+        border: 1px solid rgba(138, 43, 226, 0.2);
+        border-radius: 8px;
+        font-size: 16px;
+        resize: none;
+        height: 50px;
+        max-height: 50px;
+        overflow-y: auto;
+        outline: none;
+        background-color: rgba(249, 247, 253, 0.9);
+        color: var(--dark);
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    body.light-theme .chat-input textarea {
+        background-color: #f9f9f9;
+        color: #333;
+    }
+
+    .chat-input textarea:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px rgba(138, 43, 226, 0.2);
+    }
+
+    .chat-input button {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        height: 50px;
+        width: 80px;
+        cursor: pointer;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .chat-input button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(138, 43, 226, 0.3);
+    }
+
+    .chat-input button:active {
+        transform: translateY(1px);
+    }
+
+    .alter-ego-reveal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, rgba(32, 32, 64, 0.95) 0%, rgba(138, 43, 226, 0.9) 100%);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        backdrop-filter: blur(8px);
+    }
+
+    .alter-ego-reveal.active {
+        display: flex;
+    }
+
+    .reveal-content {
+        background-color: var(--light);
+        padding: 50px;
+        border-radius: 20px;
+        max-width: 650px;
+        text-align: center;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        position: relative;
+        overflow: hidden;
+    }
+
+    body.light-theme .reveal-content {
+        background-color: white;
+    }
+
+    .reveal-content::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 8px;
+        background: linear-gradient(90deg, var(--primary), var(--secondary));
+    }
+
+    .reveal-content h2 {
+        font-size: 28px;
+        color: var(--dark);
+        margin-bottom: 30px;
+    }
+
+    body.light-theme .reveal-content h2 {
+        color: #333;
+    }
+
+    .alter-ego-name {
+        font-size: 42px;
+        background: linear-gradient(90deg, var(--primary), var(--secondary));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        margin: 25px 0;
+        font-weight: 800;
+        letter-spacing: 1px;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.05);
+        font-family: 'Dancing Script', cursive;
+    }
+
+    .alter-ego-description {
+        font-size: 18px;
+        line-height: 1.7;
+        color: var(--gray);
+        margin-bottom: 35px;
+    }
+
+    #continueButton {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+        color: white;
+        border: none;
+        padding: 14px 30px;
+        border-radius: 10px;
+        font-size: 18px;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-weight: 600;
+        box-shadow: 0 5px 15px rgba(138, 43, 226, 0.3);
+    }
+
+    #continueButton:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(138, 43, 226, 0.4);
+    }
+
+    #continueButton:active {
+        transform: translateY(1px);
+    }
+
+    .redirect-countdown {
+        margin-top: 20px;
+        font-size: 16px;
+        color: var(--gray);
+        font-weight: 500;
+    }
+
+    .typing-indicator {
+        display: none;
+        padding: 12px 18px;
+        background-color: rgba(255, 255, 255, 0.7);
+        border-radius: 18px;
+        margin-bottom: 15px;
+        width: fit-content;
+        margin-right: auto;
+        border-bottom-left-radius: 5px;
+    }
+
+    body.light-theme .typing-indicator {
+        background-color: #f0f0f0;
+    }
+
+    .typing-indicator span {
+        height: 10px;
+        width: 10px;
+        float: left;
+        margin: 0 1px;
+        background-color: var(--primary);
+        display: block;
+        border-radius: 50%;
+        opacity: 0.4;
+    }
+
+    .typing-indicator span:nth-of-type(1) {
+        animation: 1s blink infinite 0.3333s;
+    }
+
+    .typing-indicator span:nth-of-type(2) {
+        animation: 1s blink infinite 0.6666s;
+    }
+
+    .typing-indicator span:nth-of-type(3) {
+        animation: 1s blink infinite 0.9999s;
+    }
+
+    @keyframes blink {
+        50% {
+            opacity: 1;
+        }
+    }
+
+    .chat-icon {
+        display: inline-block;
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+        color: white;
+        border-radius: 50%;
+        text-align: center;
+        line-height: 50px;
+        margin-bottom: 15px;
+        font-size: 22px;
+        box-shadow: 0 5px 15px rgba(138, 43, 226, 0.3);
+    }
+
+    .empty-chat-prompt {
+        text-align: center;
+        padding: 40px 0;
+        color: var(--gray);
+    }
+
+    .empty-chat-prompt i {
+        font-size: 50px;
+        color: var(--primary-light);
+        margin-bottom: 20px;
+        opacity: 0.7;
+    }
+
+    .empty-chat-prompt p {
+        font-size: 18px;
+    }
+
+    /* Media queries for responsiveness */
+    @media (max-width: 768px) {
+        .chat-container {
+            margin: 15px;
+            padding: 15px;
+        }
+        
+        .chat-header h1 {
+            font-size: 1.8rem;
+        }
+        
+        .message {
+            max-width: 90%;
+        }
+        
+        .reveal-content {
+            padding: 30px 20px;
+            margin: 0 20px;
+        }
+        
+        .alter-ego-name {
+            font-size: 32px;
+        }
+    }
+
+/* Add some additional styles for markdown rendering */
+.message-text h1 {
+        font-size: 1.5em;
+        margin-top: 0.5em;
+        margin-bottom: 0.5em;
+    }
+    
+    .message-text h2 {
+        font-size: 1.3em;
+        margin-top: 0.5em;
+        margin-bottom: 0.5em;
+    }
+    
+    .message-text h3 {
+        font-size: 1.2em;
+        margin-top: 0.5em;
+        margin-bottom: 0.5em;
+    }
+    
+    .message-text p {
+        margin-bottom: 0.75em;
+    }
+    
+    .message-text p:last-child {
+        margin-bottom: 0;
+    }
+    
+    .message-text ul, .message-text ol {
+        margin-left: 1.5em;
+        margin-bottom: 0.75em;
+    }
+    
+    .message-text code {
+        background-color: rgba(0, 0, 0, 0.05);
+        padding: 0.2em 0.4em;
+        border-radius: 3px;
+        font-family: monospace;
+    }
+    
+    .message-text pre {
+        background-color: rgba(0, 0, 0, 0.05);
+        padding: 0.5em;
+        border-radius: 5px;
+        overflow-x: auto;
+        margin-bottom: 0.75em;
+    }
+    
+    .message-text blockquote {
+        border-left: 3px solid rgba(138, 43, 226, 0.5);
+        padding-left: 1em;
+        margin-left: 0;
+        color: var(--gray);
+    }
+    
+    /* Different styles for user vs AI message markdown */
+    .user-message .message-text strong,
+    .user-message .message-text h1,
+    .user-message .message-text h2,
+    .user-message .message-text h3,
+    .user-message .message-text h4 {
+        color: rgba(255, 255, 255, 0.95);
+    }
+    
+    .user-message .message-text a {
+        color: rgba(255, 255, 255, 0.9);
+        text-decoration: underline;
+    }
+    
+    .user-message .message-text code {
+        background-color: rgba(255, 255, 255, 0.2);
+        color: rgba(255, 255, 255, 0.95);
+    }
+    
+    .user-message .message-text blockquote {
+        border-left-color: rgba(255, 255, 255, 0.4);
+        color: rgba(255, 255, 255, 0.85);
+    }
+
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="chat-container">
+    <div class="chat-header">
+        <div class="chat-icon">
+            <i class="fas fa-comments"></i>
+        </div>
+        <h1 class="handwritten">Discovering Your Alter Ego</h1>
+        <p>Have a meaningful conversation to unveil your inner self</p>
+    </div>
+    
+    <div class="chat-messages" id="chatMessages">
+        <!-- Messages will appear here -->
+        <div class="empty-chat-prompt" id="emptyChatPrompt">
+            <i class="fas fa-comment-dots"></i>
+            <p>Start a conversation to discover your alter ego</p>
+        </div>
+    </div>
+    
+    <div class="typing-indicator" id="typingIndicator">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+    
+    <div class="chat-input-container">
+        <div class="chat-input">
+            <textarea id="userMessage" placeholder="Type your message here..."></textarea>
+            <button id="sendButton">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="alter-ego-reveal" id="alterEgoReveal">
+    <div class="reveal-content">
+        <h2>Meet Your Alter Ego</h2>
+        <div class="alter-ego-name" id="alterEgoName"></div>
+        <div class="alter-ego-description" id="alterEgoDescription"></div>
+        <button id="continueButton">Continue to Dashboard</button>
+        <div class="redirect-countdown" id="redirectCountdown"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+
+document.addEventListener('DOMContentLoaded', function() {
+        console.log("Chat interface initialized");
+        
+        // DOM elements
+        const chatMessages = document.getElementById('chatMessages');
+        const userMessageInput = document.getElementById('userMessage');
+        const sendButton = document.getElementById('sendButton');
+        const alterEgoReveal = document.getElementById('alterEgoReveal');
+        const alterEgoName = document.getElementById('alterEgoName');
+        const alterEgoDescription = document.getElementById('alterEgoDescription');
+        const continueButton = document.getElementById('continueButton');
+        const typingIndicator = document.getElementById('typingIndicator');
+        const redirectCountdown = document.getElementById('redirectCountdown');
+        const emptyChatPrompt = document.getElementById('emptyChatPrompt');
+        
+        // Configure Marked.js options
+        marked.setOptions({
+            breaks: true,  // Add line breaks on single line breaks
+            gfm: true,     // Use GitHub Flavored Markdown
+            headerIds: false  // Don't add ids to headers
+        });
+        
+        // Format timestamp
+        function formatTime(date) {
+            return date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        }
+        
+        // Local storage key for chat history
+        const STORAGE_KEY = 'moodCanvas_chatHistory_{{ user_id }}';
+        
+        // Add message to UI with markdown support
+        function addMessageToUI(message, sender, timestamp = new Date()) {
+            // Hide empty chat prompt if visible
+            if (emptyChatPrompt) {
+                emptyChatPrompt.style.display = 'none';
+            }
+            
+            // Create message element
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', sender === 'user' ? 'user-message' : 'ai-message');
+            
+            // Create message text with markdown parsing
+            const messageText = document.createElement('div');
+            messageText.classList.add('message-text');
+            
+            // Parse markdown to HTML and sanitize to prevent XSS
+            // User messages remain as plain text, AI messages use markdown
+            if (sender === 'ai') {
+                const markdownHTML = marked.parse(message);
+                const sanitizedHTML = DOMPurify.sanitize(markdownHTML);
+                messageText.innerHTML = sanitizedHTML;
+            } else {
+                messageText.textContent = message;
+            }
+            
+            // Create time element
+            const timeSpan = document.createElement('div');
+            timeSpan.classList.add('message-time');
+            timeSpan.textContent = formatTime(timestamp);
+            
+            // Append elements
+            messageDiv.appendChild(messageText);
+            messageDiv.appendChild(timeSpan);
+            chatMessages.appendChild(messageDiv);
+            
+            // Create sparkle effect for new messages
+            if (sender === 'user') {
+                createSparklesAroundElement(messageDiv);
+            }
+            
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Create sparkles around an element
+        function createSparklesAroundElement(element) {
+            const rect = element.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2 + window.scrollX;
+            const centerY = rect.top + rect.height / 2 + window.scrollY;
+            
+            // Create multiple sparkles
+            for (let i = 0; i < 3; i++) {
+                setTimeout(() => {
+                    const offsetX = (Math.random() - 0.5) * rect.width;
+                    const offsetY = (Math.random() - 0.5) * rect.height;
+                    createSparkle(centerX + offsetX, centerY + offsetY);
+                }, i * 100);
+            }
+        }
+        
+        // Create a single sparkle
+        function createSparkle(x, y) {
+            const sparkle = document.createElement('div');
+            sparkle.className = 'sparkle';
+            
+            // Random size
+            const size = Math.random() * 12 + 5;
+            sparkle.style.width = `${size}px`;
+            sparkle.style.height = `${size}px`;
+            
+            // Position
+            sparkle.style.left = `${x - size/2}px`;
+            sparkle.style.top = `${y - size/2}px`;
+            
+            // Random color - use theme colors
+            const colors = [
+                'var(--primary-light)',
+                'var(--secondary-light)',
+                'var(--primary)',
+                'var(--secondary)'
+            ];
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            sparkle.style.background = color;
+            sparkle.style.boxShadow = `0 0 ${size/2}px ${color}`;
+            
+            document.body.appendChild(sparkle);
+            
+            // Remove after animation completes
+            setTimeout(() => {
+                if (sparkle.parentNode) {
+                    sparkle.parentNode.removeChild(sparkle);
+                }
+            }, 700);
+        }
+        
+        // Save a message to local storage
+        function saveMessageToStorage(text, sender) {
+            let history = [];
+            const savedHistory = localStorage.getItem(STORAGE_KEY);
+            
+            if (savedHistory) {
+                history = JSON.parse(savedHistory);
+            }
+            
+            history.push({
+                text: text,
+                sender: sender,
+                timestamp: new Date().toISOString()
+            });
+            
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+        }
+        
+        // Add message and save to storage
+        function addMessage(message, sender) {
+            addMessageToUI(message, sender);
+            saveMessageToStorage(message, sender);
+        }
+        
+        // Load chat history from local storage with markdown support
+        function loadChatHistory() {
+            const savedHistory = localStorage.getItem(STORAGE_KEY);
+            
+            if (savedHistory) {
+                const history = JSON.parse(savedHistory);
+                
+                if (history.length > 0) {
+                    // We have chat history, hide empty prompt
+                    if (emptyChatPrompt) {
+                        emptyChatPrompt.style.display = 'none';
+                    }
+                    
+                    // Add messages to UI
+                    history.forEach(msg => {
+                        addMessageToUI(msg.text, msg.sender, new Date(msg.timestamp));
+                    });
+                    
+                    // Scroll to bottom after loading history
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                    return true; // Return true if we loaded messages
+                }
+            }
+            
+            // No history found
+            if (emptyChatPrompt) {
+                emptyChatPrompt.style.display = 'block';
+            }
+            return false; // Return false if no messages were loaded
+        }
+        
+        // Rest of your code remains unchanged
+        
+        // Show typing indicator
+        function showTypingIndicator() {
+            typingIndicator.style.display = 'block';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Hide typing indicator
+        function hideTypingIndicator() {
+            typingIndicator.style.display = 'none';
+        }
+        
+        // Handle textarea auto-resize
+        userMessageInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            const newHeight = Math.min(this.scrollHeight, 120); // Max height of 120px
+            this.style.height = newHeight + 'px';
+        });
+        
+        // Send message to server
+        async function sendMessage() {
+            const message = userMessageInput.value.trim();
+            if (!message) return;
+            
+            console.log("Sending message:", message);
+            
+            // Add user message to chat
+            addMessage(message, 'user');
+            
+            // Clear input and reset height
+            userMessageInput.value = '';
+            userMessageInput.style.height = '50px';
+            
+            // Disable input while processing
+            userMessageInput.disabled = true;
+            sendButton.disabled = true;
+            
+            // Show typing indicator
+            showTypingIndicator();
+            
+            try {
+                // Send message to server
+                console.log("Sending to URL:", '{{ url_for("initial_session.chat") }}');
+                
+                const response = await fetch('{{ url_for("initial_session.chat") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message })
+                });
+                
+                console.log("Response status:", response.status);
+                
+                const data = await response.json();
+                console.log("Response data:", data);
+                
+                // Hide typing indicator
+                hideTypingIndicator();
+                
+                if (data.error) {
+                    addMessage("I'm sorry, there was an error processing your message. Please try again.", 'ai');
+                    return;
+                }
+                
+                // Add AI response to chat with slight delay for realism
+                setTimeout(() => {
+                    addMessage(data.response, 'ai');
+                    
+                    // Check if conversation is complete
+                    if (data.is_complete && data.alter_ego) {
+                        // Show alter ego reveal with delay
+                        setTimeout(() => {
+                            alterEgoName.textContent = data.alter_ego.name;
+                            alterEgoDescription.textContent = data.alter_ego.description;
+                            alterEgoReveal.classList.add('active');
+                            
+                            // Add countdown and redirect
+                            let secondsLeft = 10;
+                            redirectCountdown.textContent = `Redirecting to dashboard in ${secondsLeft}...`;
+                            
+                            const countdownInterval = setInterval(() => {
+                                secondsLeft--;
+                                redirectCountdown.textContent = `Redirecting to dashboard in ${secondsLeft}...`;
+                                
+                                if (secondsLeft <= 0) {
+                                    clearInterval(countdownInterval);
+                                    window.location.href = '{{ url_for("dashboard.index") }}';
+                                }
+                            }, 1000);
+                        }, 1500);
+                    }
+                }, 500);
+                
+            } catch (error) {
+                console.error('Error details:', error);
+                hideTypingIndicator();
+                addMessage("I'm sorry, there was an error connecting to the server. Please try again.", 'ai');
+            } finally {
+                // Re-enable input
+                userMessageInput.disabled = false;
+                sendButton.disabled = false;
+                userMessageInput.focus();
+            }
+        }
+        
+        // Event listeners
+        sendButton.addEventListener('click', sendMessage);
+        
+        userMessageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault(); // Prevent default to avoid new line
+                sendMessage();
+            }
+        });
+        
+        continueButton.addEventListener('click', function() {
+            window.location.href = '{{ url_for("dashboard.index") }}';
+        });
+        
+        // Load chat history first
+        const hasHistory = loadChatHistory();
+        
+        // If no history exists, add initial AI message after a delay
+        if (!hasHistory) {
+            setTimeout(() => {
+                showTypingIndicator();
+                
+                setTimeout(() => {
+                    hideTypingIndicator();
+                    addMessage("Hello {{ user_name }}! I'm your guide to discovering your Alter Ego in Mood Canvas. Let's start with some conversation to understand you better. What are your interests and how do you usually spend your time?", 'ai');
+                }, 1500);
+            }, 500);
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("Chat interface initialized");
+        
+        // DOM elements
+        const chatMessages = document.getElementById('chatMessages');
+        const userMessageInput = document.getElementById('userMessage');
+        const sendButton = document.getElementById('sendButton');
+        const alterEgoReveal = document.getElementById('alterEgoReveal');
+        const alterEgoName = document.getElementById('alterEgoName');
+        const alterEgoDescription = document.getElementById('alterEgoDescription');
+        const continueButton = document.getElementById('continueButton');
+        const typingIndicator = document.getElementById('typingIndicator');
+        const redirectCountdown = document.getElementById('redirectCountdown');
+        const emptyChatPrompt = document.getElementById('emptyChatPrompt');
+        
+        // Format timestamp
+        function formatTime(date) {
+            return date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        }
+        
+        // Local storage key for chat history
+        const STORAGE_KEY = 'moodCanvas_chatHistory_{{ user_id }}';
+        
+        // Add message to UI
+        function addMessageToUI(message, sender, timestamp = new Date()) {
+            // Hide empty chat prompt if visible
+            if (emptyChatPrompt) {
+                emptyChatPrompt.style.display = 'none';
+            }
+            
+            // Create message element
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', sender === 'user' ? 'user-message' : 'ai-message');
+            
+            // Create message text
+            const messageText = document.createElement('div');
+            messageText.classList.add('message-text');
+            messageText.textContent = message;
+            
+            // Create time element
+            const timeSpan = document.createElement('div');
+            timeSpan.classList.add('message-time');
+            timeSpan.textContent = formatTime(timestamp);
+            
+            // Append elements
+            messageDiv.appendChild(messageText);
+            messageDiv.appendChild(timeSpan);
+            chatMessages.appendChild(messageDiv);
+            
+            // Create sparkle effect for new messages
+            if (sender === 'user') {
+                createSparklesAroundElement(messageDiv);
+            }
+            
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Create sparkles around an element
+        function createSparklesAroundElement(element) {
+            const rect = element.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2 + window.scrollX;
+            const centerY = rect.top + rect.height / 2 + window.scrollY;
+            
+            // Create multiple sparkles
+            for (let i = 0; i < 3; i++) {
+                setTimeout(() => {
+                    const offsetX = (Math.random() - 0.5) * rect.width;
+                    const offsetY = (Math.random() - 0.5) * rect.height;
+                    createSparkle(centerX + offsetX, centerY + offsetY);
+                }, i * 100);
+            }
+        }
+        
+        // Create a single sparkle
+        function createSparkle(x, y) {
+            const sparkle = document.createElement('div');
+            sparkle.className = 'sparkle';
+            
+            // Random size
+            const size = Math.random() * 12 + 5;
+            sparkle.style.width = `${size}px`;
+            sparkle.style.height = `${size}px`;
+            
+            // Position
+            sparkle.style.left = `${x - size/2}px`;
+            sparkle.style.top = `${y - size/2}px`;
+            
+            // Random color - use theme colors
+            const colors = [
+                'var(--primary-light)',
+                'var(--secondary-light)',
+                'var(--primary)',
+                'var(--secondary)'
+            ];
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            sparkle.style.background = color;
+            sparkle.style.boxShadow = `0 0 ${size/2}px ${color}`;
+            
+            document.body.appendChild(sparkle);
+            
+            // Remove after animation completes
+            setTimeout(() => {
+                if (sparkle.parentNode) {
+                    sparkle.parentNode.removeChild(sparkle);
+                }
+            }, 700);
+        }
+        
+        // Save a message to local storage
+        function saveMessageToStorage(text, sender) {
+            let history = [];
+            const savedHistory = localStorage.getItem(STORAGE_KEY);
+            
+            if (savedHistory) {
+                history = JSON.parse(savedHistory);
+            }
+            
+            history.push({
+                text: text,
+                sender: sender,
+                timestamp: new Date().toISOString()
+            });
+            
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+        }
+        
+        // Add message and save to storage
+        function addMessage(message, sender) {
+            addMessageToUI(message, sender);
+            saveMessageToStorage(message, sender);
+        }
+        
+        // Load chat history from local storage
+        function loadChatHistory() {
+            const savedHistory = localStorage.getItem(STORAGE_KEY);
+            
+            if (savedHistory) {
+                const history = JSON.parse(savedHistory);
+                
+                if (history.length > 0) {
+                    // We have chat history, hide empty prompt
+                    if (emptyChatPrompt) {
+                        emptyChatPrompt.style.display = 'none';
+                    }
+                    
+                    // Add messages to UI
+                    history.forEach(msg => {
+                        addMessageToUI(msg.text, msg.sender, new Date(msg.timestamp));
+                    });
+                    
+                    // Scroll to bottom after loading history
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                    return true; // Return true if we loaded messages
+                }
+            }
+            
+            // No history found
+            if (emptyChatPrompt) {
+                emptyChatPrompt.style.display = 'block';
+            }
+            return false; // Return false if no messages were loaded
+        }
+        
+        // Show typing indicator
+        function showTypingIndicator() {
+            typingIndicator.style.display = 'block';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Hide typing indicator
+        function hideTypingIndicator() {
+            typingIndicator.style.display = 'none';
+        }
+        
+        // Handle textarea auto-resize
+        userMessageInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            const newHeight = Math.min(this.scrollHeight, 120); // Max height of 120px
+            this.style.height = newHeight + 'px';
+        });
+        
+        // Send message to server
+        async function sendMessage() {
+            const message = userMessageInput.value.trim();
+            if (!message) return;
+            
+            console.log("Sending message:", message);
+            
+            // Add user message to chat
+            addMessage(message, 'user');
+            
+            // Clear input and reset height
+            userMessageInput.value = '';
+            userMessageInput.style.height = '50px';
+            
+            // Disable input while processing
+            userMessageInput.disabled = true;
+            sendButton.disabled = true;
+            
+            // Show typing indicator
+            showTypingIndicator();
+            
+            try {
+                // Send message to server
+                console.log("Sending to URL:", '{{ url_for("initial_session.chat") }}');
+                
+                const response = await fetch('{{ url_for("initial_session.chat") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message })
+                });
+                
+                console.log("Response status:", response.status);
+                
+                const data = await response.json();
+                console.log("Response data:", data);
+                
+                // Hide typing indicator
+                hideTypingIndicator();
+                
+                if (data.error) {
+                    addMessage("I'm sorry, there was an error processing your message. Please try again.", 'ai');
+                    return;
+                }
+                
+                // Add AI response to chat with slight delay for realism
+                setTimeout(() => {
+                    addMessage(data.response, 'ai');
+                    
+                    // Check if conversation is complete
+                    if (data.is_complete && data.alter_ego) {
+                        // Show alter ego reveal with delay
+                        setTimeout(() => {
+                            alterEgoName.textContent = data.alter_ego.name;
+                            alterEgoDescription.textContent = data.alter_ego.description;
+                            alterEgoReveal.classList.add('active');
+                            
+                            // Add countdown and redirect
+                            let secondsLeft = 10;
+                            redirectCountdown.textContent = `Redirecting to dashboard in ${secondsLeft}...`;
+                            
+                            const countdownInterval = setInterval(() => {
+                                secondsLeft--;
+                                redirectCountdown.textContent = `Redirecting to dashboard in ${secondsLeft}...`;
+                                
+                                if (secondsLeft <= 0) {
+                                    clearInterval(countdownInterval);
+                                    window.location.href = '{{ url_for("dashboard.index") }}';
+                                }
+                            }, 1000);
+                        }, 1500);
+                    }
+                }, 500);
+                
+            } catch (error) {
+                console.error('Error details:', error);
+                hideTypingIndicator();
+                addMessage("I'm sorry, there was an error connecting to the server. Please try again.", 'ai');
+            } finally {
+                // Re-enable input
+                userMessageInput.disabled = false;
+                sendButton.disabled = false;
+                userMessageInput.focus();
+            }
+        }
+        
+        // Event listeners
+        sendButton.addEventListener('click', sendMessage);
+        
+        userMessageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault(); // Prevent default to avoid new line
+                sendMessage();
+            }
+        });
+        
+        continueButton.addEventListener('click', function() {
+            window.location.href = '{{ url_for("dashboard.index") }}';
+        });
+        
+        // Load chat history first
+        const hasHistory = loadChatHistory();
+        
+        // If no history exists, add initial AI message after a delay
+        if (!hasHistory) {
+            setTimeout(() => {
+                showTypingIndicator();
+                
+                setTimeout(() => {
+                    hideTypingIndicator();
+                    addMessage("Hello {{ user_name }}! I'm your guide to discovering your Alter Ego in Mood Canvas. Let's start with some conversation to understand you better. What are your interests and how do you usually spend your time?", 'ai');
+                }, 1500);
+            }, 500);
+        }
+    });
+</script>
+{% endblock %}
