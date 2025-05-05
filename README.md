@@ -9,6 +9,7 @@ MoodCanvas is a personalized personality development application that creates a 
 ## 📹 Live Demo
 
 [![MoodCanvas Demo](https://img.youtube.com/vi/ZzH9x7nGJuw/0.jpg)](https://youtu.be/ZzH9x7nGJuw)
+
 *Click the image above to watch our demo video*
 
 ## 🌟 Core Vision
