@@ -49,7 +49,6 @@ MoodCanvas directly supports **UN Sustainable Development Goal 3: Good Health an
 - **AI Integration**: LLaMA-4 (via Groq API)
 - **Messaging**: Twilio WhatsApp API
 - **Natural Language Processing**: Sentence Transformers for vector embeddings
-- **Authentication**: JWT-based system
 
 ## 📋 Project Structure
 
